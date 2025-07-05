@@ -1,4 +1,4 @@
-# osascript-bridge
+# macos-notify-bridge
 
 DenoベースのHTTPサーバーで、OSAScriptを使用してmacOSの通知機能を提供します。
 
@@ -27,8 +27,8 @@ curl -fsSL https://deno.land/install.sh | sh
 ### 2. リポジトリのクローン
 
 ```bash
-git clone https://github.com/fukuiretu/osascript-bridge.git
-cd osascript-bridge
+git clone https://github.com/fukuiretu/macos-notify-bridge.git
+cd macos-notify-bridge
 ```
 
 ### 3. サーバーの起動

@@ -1,6 +1,6 @@
 # macos-notify-bridge
 
-DenoベースのHTTPサーバーで、OSAScriptを使用してmacOSの通知機能を提供します。
+DenoベースのHTTPサーバーで、OSAScriptまたはterminal-notifierを使用してmacOSの通知機能を提供します。
 
 ## 機能
 
@@ -10,7 +10,8 @@ DenoベースのHTTPサーバーで、OSAScriptを使用してmacOSの通知機�
 ## 必要な環境
 
 - [Deno](https://deno.land/) v1.40.0 以上
-- macOS（OSAScriptが必要）
+- macOS（OSAScriptまたはterminal-notifierが必要）
+- [terminal-notifier](https://github.com/julienXX/terminal-notifier)（オプション）
 
 ## セットアップ
 
@@ -31,7 +32,14 @@ git clone https://github.com/fukuiretu/macos-notify-bridge.git
 cd macos-notify-bridge
 ```
 
-### 3. サーバーの起動
+### 3. terminal-notifierのインストール（オプション）
+
+```bash
+# Homebrewでインストール
+brew install terminal-notifier
+```
+
+### 4. サーバーの起動
 
 ```bash
 deno run --allow-net --allow-run server.ts
@@ -43,6 +51,7 @@ deno run --allow-net --allow-run server.ts
 Server running on http://localhost:8000
 Try: curl http://localhost:8000/ping
 Try: curl -X POST -H 'Content-Type: application/json' -d '{"title":"Test","message":"Hello World","sound":true}' http://localhost:8000/notify
+Try: curl -X POST -H 'Content-Type: application/json' -d '{"title":"Test","message":"Hello World","method":"terminal-notifier"}' http://localhost:8000/notify
 ```
 
 ## API使用方法
@@ -64,10 +73,21 @@ pong
 
 macOSの通知センターに通知を送信します。
 
+#### OSAScriptを使用した通知（デフォルト）
+
 ```bash
 curl -X POST \
   -H 'Content-Type: application/json' \
   -d '{"title":"通知タイトル","message":"通知メッセージ","sound":true}' \
+  http://localhost:8000/notify
+```
+
+#### terminal-notifierを使用した通知
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"通知タイトル","message":"通知メッセージ","method":"terminal-notifier","sound":true}' \
   http://localhost:8000/notify
 ```
 
@@ -78,6 +98,7 @@ curl -X POST \
 | `title` | string | ✓ | 通知のタイトル |
 | `message` | string | ✓ | 通知のメッセージ |
 | `sound` | boolean | - | 通知音の有無（デフォルト: false） |
+| `method` | string | - | 通知方法（`osascript` または `terminal-notifier`、デフォルト: `osascript`） |
 
 #### レスポンス
 
@@ -104,7 +125,11 @@ macOSの通知が表示されない場合は、以下を確認してください
 
 3. **手動テスト**
    ```bash
+   # OSAScriptでのテスト
    osascript -e 'display notification "テスト" with title "テスト"'
+   
+   # terminal-notifierでのテスト（インストールされている場合）
+   terminal-notifier -title "テスト" -message "テスト"
    ```
 
 ## 開発

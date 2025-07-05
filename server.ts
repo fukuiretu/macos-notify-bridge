@@ -2,6 +2,7 @@ interface NotificationRequest {
   title: string;
   message: string;
   sound?: boolean;
+  method?: 'osascript' | 'terminal-notifier';
 }
 
 const CONFIG = {
@@ -26,7 +27,7 @@ function handlePing(): Response {
   return createResponse("pong");
 }
 
-async function sendNotification(request: NotificationRequest): Promise<boolean> {
+async function sendNotificationOsascript(request: NotificationRequest): Promise<boolean> {
   const { title, message, sound = false } = request;
   
   const osascript = sound 
@@ -45,6 +46,38 @@ async function sendNotification(request: NotificationRequest): Promise<boolean> 
   }
 }
 
+async function sendNotificationTerminalNotifier(request: NotificationRequest): Promise<boolean> {
+  const { title, message, sound = false } = request;
+  
+  try {
+    const args = ["-title", title, "-message", message];
+    if (sound) {
+      args.push("-sound", "default");
+    }
+    
+    const command = new Deno.Command("terminal-notifier", {
+      args: args,
+    });
+    
+    const { code } = await command.output();
+    return code === 0;
+  } catch {
+    return false;
+  }
+}
+
+async function sendNotification(request: NotificationRequest): Promise<boolean> {
+  const { method = 'osascript' } = request;
+  
+  switch (method) {
+    case 'terminal-notifier':
+      return await sendNotificationTerminalNotifier(request);
+    case 'osascript':
+    default:
+      return await sendNotificationOsascript(request);
+  }
+}
+
 async function handleNotify(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return createErrorResponse("Method not allowed", 405);
@@ -52,13 +85,13 @@ async function handleNotify(req: Request): Promise<Response> {
   
   try {
     const body = await req.json();
-    const { title, message, sound = false } = body as NotificationRequest;
+    const { title, message, sound = false, method = 'osascript' } = body as NotificationRequest;
     
     if (!title || !message) {
       return createErrorResponse("Missing title or message", 400);
     }
     
-    const success = await sendNotification({ title, message, sound });
+    const success = await sendNotification({ title, message, sound, method });
     
     return success 
       ? createResponse("Notification sent successfully")
@@ -92,3 +125,4 @@ const server = Deno.serve({ port: CONFIG.port }, router);
 console.log(`Server running on http://localhost:${CONFIG.port}`);
 console.log(`Try: curl http://localhost:${CONFIG.port}/ping`);
 console.log(`Try: curl -X POST -H 'Content-Type: application/json' -d '{\"title\":\"Test\",\"message\":\"Hello World\",\"sound\":true}' http://localhost:${CONFIG.port}/notify`);
+console.log(`Try: curl -X POST -H 'Content-Type: application/json' -d '{\"title\":\"Test\",\"message\":\"Hello World\",\"method\":\"terminal-notifier\"}' http://localhost:${CONFIG.port}/notify`);
